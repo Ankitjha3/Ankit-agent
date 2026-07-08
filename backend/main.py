@@ -128,7 +128,7 @@ def record_daily_activity(db: Session, xp: int):
     db.commit()
 
 def get_appreciation_message(task_title: str) -> str:
-    api_key = os.getenv("GROQ_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY", "").strip()
     if not api_key or "your_groq_api_key_here" in api_key:
         return f"Great job completing '{task_title}'! 🎉"
     try:
@@ -436,10 +436,10 @@ def delete_habit(habit_id: int, db: Session = Depends(get_db)):
 @app.post("/api/chat")
 def chat_api(payload: ChatMessage, db: Session = Depends(get_db)):
     if payload.message == "__ping__":
-        api_key = os.getenv("GROQ_API_KEY")
+        api_key = os.getenv("GROQ_API_KEY", "").strip()
         return {"response": "", "missing_api_key": not api_key or "your_groq_api_key_here" in api_key}
 
-    api_key = os.getenv("GROQ_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY", "").strip()
     if not api_key or "your_groq_api_key_here" in api_key:
         return {"response": "Set `GROQ_API_KEY` in `.env` and restart.", "missing_api_key": True}
 

@@ -191,7 +191,7 @@ def _execute_action(action: str, params: dict) -> str:
 
 def _call_groq(messages: list, temperature: float = 0.5) -> str:
     """Call Groq API directly via httpx — works on all platforms including Railway."""
-    api_key = os.getenv("GROQ_API_KEY", "")
+    api_key = os.getenv("GROQ_API_KEY", "").strip()  # strip removes \n and spaces
     
     payload = {
         "model": "llama-3.3-70b-versatile",
