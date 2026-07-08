@@ -132,9 +132,15 @@ def get_appreciation_message(task_title: str) -> str:
     if not api_key or "your_groq_api_key_here" in api_key:
         return f"Great job completing '{task_title}'! 🎉"
     try:
-        from langchain_groq import ChatGroq
-        llm = ChatGroq(model="llama-3.3-70b-versatile", groq_api_key=api_key, temperature=0.8)
-        return llm.invoke(f"User completed: '{task_title}'. Give 1-2 sentence enthusiastic praise with emojis.").content.strip()
+        import httpx
+        resp = httpx.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={"model": "llama-3.3-70b-versatile", "temperature": 0.8, "max_tokens": 100,
+                  "messages": [{"role": "user", "content": f"User completed: '{task_title}'. Give 1-2 sentence enthusiastic praise with emojis."}]},
+            timeout=15.0, verify=False
+        )
+        return resp.json()["choices"][0]["message"]["content"].strip()
     except Exception:
         return f"Awesome work on '{task_title}'! 🚀"
 

@@ -9,3 +9,4 @@ langchain-community
 langchain-groq
 langgraph
 python-multipart
+httpx

@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import httpx
 from datetime import datetime
 from backend.database import SessionLocal, Task, UserProgress
 from langchain_groq import ChatGroq
@@ -188,35 +189,54 @@ def _execute_action(action: str, params: dict) -> str:
         return _get_progress()
     return ""
 
+def _call_groq(messages: list, temperature: float = 0.5) -> str:
+    """Call Groq API directly via httpx — works on all platforms including Railway."""
+    api_key = os.getenv("GROQ_API_KEY", "")
+    
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": 1024,
+    }
+    
+    with httpx.Client(timeout=60.0, verify=False) as client:
+        resp = client.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+        )
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"]
+
+
 def run_agent(user_message: str, chat_history: list) -> str:
-    """Run agent using JSON action parsing — avoids Groq tool_call compatibility issues."""
+    """Run agent using direct Groq HTTP calls — no SDK connection issues."""
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key or api_key.strip() == "" or "your_groq_api_key_here" in api_key:
         return None
-
-    llm = ChatGroq(model="llama-3.3-70b-versatile", groq_api_key=api_key, temperature=0.5)
 
     # Clean history — only plain text exchanges
     clean_history = []
     for msg in chat_history:
         if isinstance(msg, HumanMessage):
-            clean_history.append(msg)
+            clean_history.append({"role": "user", "content": msg.content})
         elif isinstance(msg, AIMessage) and msg.content and not getattr(msg, "tool_calls", None):
-            clean_history.append(AIMessage(content=msg.content))
+            clean_history.append({"role": "assistant", "content": msg.content})
 
-    messages = [SystemMessage(content=SYSTEM_PROMPT)] + clean_history[-10:] + [HumanMessage(content=user_message)]
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}] + clean_history[-10:] + [{"role": "user", "content": user_message}]
 
     for round_num in range(3):
-        response = llm.invoke(messages)
-        raw = response.content
+        raw = _call_groq(messages)
 
         actions = _parse_actions(raw)
 
         if not actions:
-            # No JSON found — plain text response, return as-is
             return raw.strip()
 
-        # Execute non-reply actions first, collect results
         tool_results = []
         final_reply = None
 
@@ -230,23 +250,19 @@ def run_agent(user_message: str, chat_history: list) -> str:
                 result = _execute_action(action, params)
                 tool_results.append(f"[{action}]: {result}")
 
-        # If we have a reply, return it (with tool context prepended if useful)
         if final_reply:
             return final_reply
 
-        # No reply yet but we ran tools — ask model to now give the reply
         if tool_results and round_num < 2:
             context = "\n".join(tool_results)
-            messages.append(AIMessage(content=raw))
-            messages.append(HumanMessage(content=
+            messages.append({"role": "assistant", "content": raw})
+            messages.append({"role": "user", "content":
                 f"Tool results:\n{context}\n\n"
-                f"Now reply to the user in a friendly Hinglish way. "
-                f"Output ONLY a reply action JSON:\n"
-                f'```json\n{{"action": "reply", "params": {{"text": "your message here"}}}}\n```'
-            ))
+                f"Now reply to the user in friendly Hinglish. Output ONLY:\n"
+                f'```json\n{{"action": "reply", "params": {{"text": "your message"}}}}\n```'
+            })
             continue
 
-        # Fallback — just return tool results as text
         if tool_results:
             return "\n".join(tool_results)
 
