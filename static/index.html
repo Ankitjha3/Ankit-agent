@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ankit Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand">
+                <div class="brand-icon"><i class="fa-solid fa-bolt"></i></div>
+                <div class="brand-text">
+                    <span class="brand-name">Ankit</span>
+                    <span class="brand-sub">Agent</span>
+                </div>
+            </div>
+            <button class="sidebar-close" onclick="closeSidebar()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <!-- Level Badge in Sidebar -->
+        <div class="sidebar-level" id="sidebar-level">
+            <div class="level-badge" id="sb-level-badge">Lv.1</div>
+            <div class="level-info-mini">
+                <div class="level-title" id="sb-level-title">Beginner 🌱</div>
+                <div class="level-bar-track"><div class="level-bar-fill" id="sb-level-bar" style="width:0%"></div></div>
+                <div class="level-xp-txt" id="sb-level-xp">0 XP</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <button class="nav-item active" id="nav-tasks" onclick="showView('tasks')">
+                <i class="fa-solid fa-list-check"></i><span>Tasks</span>
+            </button>
+            <button class="nav-item" id="nav-goals" onclick="showView('goals')">
+                <i class="fa-solid fa-bullseye"></i><span>Goals</span>
+            </button>
+            <button class="nav-item" id="nav-habits" onclick="showView('habits')">
+                <i class="fa-solid fa-fire"></i><span>Habits</span>
+            </button>
+            <button class="nav-item" id="nav-progress" onclick="showView('progress')">
+                <i class="fa-solid fa-chart-line"></i><span>Progress</span>
+            </button>
+            <button class="nav-item" id="nav-chat" onclick="showView('chat')">
+                <i class="fa-solid fa-robot"></i><span>AI Chat</span>
+            </button>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="api-status-pill" id="api-status">
+                <span class="dot offline" id="status-dot"></span>
+                <span id="api-status-text">Connecting...</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Overlay for mobile sidebar -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <!-- Main -->
+    <div class="main-content">
+        <header class="topbar">
+            <button class="menu-btn" onclick="openSidebar()"><i class="fa-solid fa-bars"></i></button>
+            <div class="topbar-title" id="topbar-title">My Tasks</div>
+            <button class="icon-btn" onclick="refreshDashboard()" title="Refresh"><i class="fa-solid fa-arrows-rotate"></i></button>
+        </header>
+
+        <div class="views-container">
+
+            <!-- ── TASKS VIEW ── -->
+            <div class="view active" id="view-tasks">
+                <div class="view-inner">
+
+                    <div class="card" id="add-task-card">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-plus"></i> New Task</h2>
+                            <button class="collapse-btn" id="collapse-btn" onclick="toggleAddForm()">
+                                <i class="fa-solid fa-chevron-up"></i>
+                            </button>
+                        </div>
+                        <div id="add-task-form-body">
+                            <form id="task-form" autocomplete="off">
+                                <div class="field">
+                                    <input type="text" id="task-title" placeholder="What needs to be done?" required>
+                                </div>
+                                <div class="field">
+                                    <textarea id="task-desc" placeholder="Notes (optional)..." rows="2"></textarea>
+                                </div>
+                                <div class="field-row">
+                                    <div class="field">
+                                        <label>Priority</label>
+                                        <div class="priority-group">
+                                            <input type="radio" name="priority" id="p-low" value="low">
+                                            <label for="p-low" class="p-chip low">Low</label>
+                                            <input type="radio" name="priority" id="p-medium" value="medium" checked>
+                                            <label for="p-medium" class="p-chip medium">Medium</label>
+                                            <input type="radio" name="priority" id="p-high" value="high">
+                                            <label for="p-high" class="p-chip high">High</label>
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <label>Due Date</label>
+                                        <input type="date" id="task-due">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn-primary" id="add-task-btn">
+                                    <i class="fa-solid fa-plus"></i> Add Task
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Daily Briefing Banner -->
+                    <div class="briefing-card hidden" id="briefing-card">
+                        <div class="briefing-icon">☀️</div>
+                        <div class="briefing-body">
+                            <div class="briefing-label">Daily Briefing</div>
+                            <p id="briefing-text"></p>
+                        </div>
+                        <button class="briefing-close" onclick="document.getElementById('briefing-card').classList.add('hidden')">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="toolbar">                        <div class="search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="search-input" placeholder="Search tasks..." oninput="renderTasks()">
+                        </div>
+                        <div class="filter-group">
+                            <button class="filter-chip active" onclick="setFilter('all',this)">All</button>
+                            <button class="filter-chip" onclick="setFilter('pending',this)">Pending</button>
+                            <button class="filter-chip" onclick="setFilter('completed',this)">Done</button>
+                        </div>
+                    </div>
+
+                    <div class="stats-row">
+                        <div class="stat-mini"><span class="stat-num" id="stat-pending">0</span><span class="stat-lbl">Pending</span></div>
+                        <div class="stat-mini"><span class="stat-num" id="stat-done">0</span><span class="stat-lbl">Completed</span></div>
+                        <div class="stat-mini"><span class="stat-num" id="stat-high">0</span><span class="stat-lbl">High Priority</span></div>
+                        <div class="stat-mini"><span class="stat-num" id="stat-pct">0%</span><span class="stat-lbl">Done Rate</span></div>
+                    </div>
+
+                    <div class="suggestion-banner">
+                        <div class="suggestion-left">
+                            <span class="suggestion-label"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Suggestion</span>                            <p id="next-task-suggestion">Analyzing your tasks...</p>
+                        </div>
+                        <div class="suggestion-right">
+                            <button class="icon-btn" onclick="fetchSuggestion()"><i class="fa-solid fa-arrows-rotate"></i></button>
+                            <div id="suggestion-action-container"></div>
+                        </div>
+                    </div>
+
+                    <div class="tasks-list" id="tasks-list">
+                        <div class="empty-state"><i class="fa-solid fa-inbox"></i><p>Loading tasks...</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── GOALS VIEW ── -->
+            <div class="view" id="view-goals">
+                <div class="view-inner">
+                    <div class="card">
+                        <div class="card-header"><h2><i class="fa-solid fa-bullseye"></i> Set a New Goal</h2></div>
+                        <div style="padding:1.1rem">
+                            <form id="goal-form" autocomplete="off">
+                                <div class="field"><input type="text" id="goal-title" placeholder="What do you want to achieve?" required></div>
+                                <div class="field"><textarea id="goal-desc" placeholder="Details (optional)..." rows="2"></textarea></div>
+                                <div class="field-row">
+                                    <div class="field">
+                                        <label>Timeframe</label>
+                                        <select id="goal-timeframe" style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:.62rem .9rem;color:var(--text);font-size:.88rem;width:100%">
+                                            <option value="weekly">Weekly</option>
+                                            <option value="monthly">Monthly</option>
+                                            <option value="custom">Custom</option>
+                                        </select>
+                                    </div>
+                                    <div class="field"><label>Deadline</label><input type="date" id="goal-deadline"></div>
+                                </div>
+                                <button type="submit" class="btn-primary" id="add-goal-btn">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Create Goal + Auto-generate Tasks
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div id="goals-list"><div class="empty-state"><i class="fa-solid fa-bullseye"></i><p>Loading goals...</p></div></div>
+                </div>
+            </div>
+
+            <!-- ── HABITS VIEW ── -->
+            <div class="view" id="view-habits">
+                <div class="view-inner">
+                    <div class="card">
+                        <div class="card-header"><h2><i class="fa-solid fa-fire"></i> Add a Habit</h2></div>
+                        <div style="padding:1.1rem">
+                            <form id="habit-form" autocomplete="off">
+                                <div class="field"><input type="text" id="habit-title" placeholder="e.g. Gym, Reading, Meditation..." required></div>
+                                <div class="field"><textarea id="habit-desc" placeholder="Why this habit? (optional)" rows="2"></textarea></div>
+                                <div class="field">
+                                    <label>Frequency</label>
+                                    <div class="priority-group">
+                                        <input type="radio" name="habit-freq" id="hf-daily" value="daily" checked>
+                                        <label for="hf-daily" class="p-chip medium">Daily</label>
+                                        <input type="radio" name="habit-freq" id="hf-weekly" value="weekly">
+                                        <label for="hf-weekly" class="p-chip low">Weekly</label>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn-primary" id="add-habit-btn">
+                                    <i class="fa-solid fa-plus"></i> Add Habit
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div id="habits-list"><div class="empty-state"><i class="fa-solid fa-fire"></i><p>Loading habits...</p></div></div>
+                </div>
+            </div>
+
+            <!-- ── PROGRESS VIEW ── -->
+            <div class="view" id="view-progress">
+                <div class="view-inner">
+
+                    <!-- Level Card -->
+                    <div class="card level-card">
+                        <div class="level-header">
+                            <div class="level-num-big" id="p-level-num">1</div>
+                            <div class="level-details">
+                                <div class="level-title-big" id="p-level-title">Beginner 🌱</div>
+                                <div class="level-xp-info" id="p-xp-info">0 XP · 100 XP to next level</div>
+                                <div class="level-progress-track">
+                                    <div class="level-progress-fill" id="p-level-fill" style="width:0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Streak + Stats Row -->
+                    <div class="progress-stats-grid">
+                        <div class="pstat-card flame">
+                            <div class="pstat-icon">🔥</div>
+                            <div class="pstat-val" id="p-streak">0</div>
+                            <div class="pstat-lbl">Day Streak</div>
+                        </div>
+                        <div class="pstat-card">
+                            <div class="pstat-icon">🏆</div>
+                            <div class="pstat-val" id="p-longest">0</div>
+                            <div class="pstat-lbl">Best Streak</div>
+                        </div>
+                        <div class="pstat-card">
+                            <div class="pstat-icon">⚡</div>
+                            <div class="pstat-val" id="p-xp">0</div>
+                            <div class="pstat-lbl">Total XP</div>
+                        </div>
+                        <div class="pstat-card">
+                            <div class="pstat-icon">✅</div>
+                            <div class="pstat-val" id="p-rate">0%</div>
+                            <div class="pstat-lbl">Completion</div>
+                        </div>
+                    </div>
+
+                    <!-- Today Status -->
+                    <div class="today-status" id="today-status">
+                        <i class="fa-solid fa-calendar-day"></i>
+                        <span id="today-status-text">Checking today's activity...</span>
+                    </div>
+
+                    <!-- 7-Day Activity -->
+                    <div class="card">
+                        <div class="card-header"><h2>Last 7 Days</h2></div>
+                        <div class="activity-chart" id="activity-chart"></div>
+                        <p class="progress-label">Tasks completed per day — your real activity history</p>
+                    </div>
+
+                    <!-- Overall Progress -->
+                    <div class="card">
+                        <div class="card-header"><h2>Overall Progress</h2></div>
+                        <div class="progress-body">
+                            <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+                            <span class="progress-pct" id="progress-pct">0%</span>
+                        </div>
+                        <p class="progress-label" id="progress-label">No tasks yet.</p>
+                    </div>
+
+                    <!-- Priority Breakdown -->
+                    <div class="card">
+                        <div class="card-header"><h2>Priority Breakdown</h2></div>
+                        <div class="priority-breakdown">
+                            <div class="pb-row"><span class="pb-label high">High</span><div class="pb-bar-track"><div class="pb-bar high" id="pb-high"></div></div><span class="pb-count" id="pb-high-n">0</span></div>
+                            <div class="pb-row"><span class="pb-label medium">Med</span><div class="pb-bar-track"><div class="pb-bar medium" id="pb-medium"></div></div><span class="pb-count" id="pb-medium-n">0</span></div>
+                            <div class="pb-row"><span class="pb-label low">Low</span><div class="pb-bar-track"><div class="pb-bar low" id="pb-low"></div></div><span class="pb-count" id="pb-low-n">0</span></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ── CHAT VIEW ── -->
+            <div class="view" id="view-chat">
+                <div class="chat-panel">
+                    <div class="chat-header">
+                        <div class="agent-profile">
+                            <div class="agent-avatar"><i class="fa-solid fa-robot"></i><span class="agent-dot" id="agent-dot"></span></div>
+                            <div><div class="agent-name">Ankit Agent</div><div class="agent-tagline">Your AI productivity companion</div></div>
+                        </div>
+                        <button class="icon-btn danger" onclick="clearLocalChat()"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+
+                    <div class="chat-messages" id="chat-messages-container">
+                        <div class="msg agent-msg">
+                            <div class="msg-bubble">Hey Ankit! 👋 Main hun tera AI Agent. Bata kya karna hai — main tasks set kar dunga, guide karunga step by step, aur jab tu complete kare to aage ka bata dunga. Ya photo bhej apni to-do list ki! 📸</div>
+                            <span class="msg-time">Just now</span>
+                        </div>
+                    </div>
+
+                    <div class="quick-prompts">
+                        <button onclick="sendQuickPrompt('Aaj mujhe kya karna chahiye?')">🎯 Aaj kya karu?</button>
+                        <button onclick="sendQuickPrompt('Mera progress dikhao')">📊 My progress</button>
+                        <button onclick="sendQuickPrompt('Meri streak kaisi hai?')">🔥 Streak</button>
+                        <button onclick="sendQuickPrompt('Sab pending tasks dikhao')">📋 Pending</button>
+                    </div>
+
+                    <form id="chat-form" class="chat-input-bar">
+                        <label class="img-upload-btn" for="img-upload" title="Send photo with tasks">
+                            <i class="fa-solid fa-image"></i>
+                            <input type="file" id="img-upload" accept="image/*" style="display:none" onchange="handleImageUpload(this)">
+                        </label>
+                        <input type="text" id="chat-input" placeholder="Bolo kya karna hai, ya photo bhejo..." autocomplete="off">
+                        <button type="submit" class="send-btn" id="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Nav -->
+<nav class="mobile-nav">
+    <button class="mobile-nav-item active" id="mnav-tasks" onclick="showView('tasks')"><i class="fa-solid fa-list-check"></i><span>Tasks</span></button>
+    <button class="mobile-nav-item" id="mnav-goals" onclick="showView('goals')"><i class="fa-solid fa-bullseye"></i><span>Goals</span></button>
+    <button class="mobile-nav-item" id="mnav-habits" onclick="showView('habits')"><i class="fa-solid fa-fire"></i><span>Habits</span></button>
+    <button class="mobile-nav-item" id="mnav-progress" onclick="showView('progress')"><i class="fa-solid fa-chart-line"></i><span>Progress</span></button>
+    <button class="mobile-nav-item" id="mnav-chat" onclick="showView('chat')"><i class="fa-solid fa-robot"></i><span>Chat</span></button>
+</nav>
+
+<!-- API Key Modal -->
+<div id="key-warning-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div class="modal-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <h2>Groq API Key Required</h2>
+        <p>Set up your free Groq API key to enable AI chat and smart features.</p>
+        <div class="modal-steps">
+            <div class="step"><span>1</span>Go to <a href="https://console.groq.com" target="_blank">console.groq.com</a> and create a free key</div>
+            <div class="step"><span>2</span>Add <code>GROQ_API_KEY=your_key</code> to the <code>.env</code> file</div>
+            <div class="step"><span>3</span>Restart the server</div>
+        </div>
+        <button class="btn-primary" onclick="closeKeyWarning()">Continue in Offline Mode</button>
+    </div>
+</div>
+
+<!-- XP Toast -->
+<div id="xp-toast" class="xp-toast hidden"></div>
+<div id="toast" class="toast hidden"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
