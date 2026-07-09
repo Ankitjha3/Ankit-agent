@@ -173,7 +173,7 @@ async function handleAddTask(e) {
     const titleEl = document.getElementById("task-title");
     const descEl = document.getElementById("task-desc");
     const dueEl = document.getElementById("task-due");
-    const priorityEl = document.querySelector('input[name="priority"]:checked');
+    const priorityEl = document.querySelector('#task-form input[name="priority"]:checked');
     const btn = document.getElementById("add-task-btn");
     const title = titleEl.value.trim();
     if (!title) { showToast("Please enter a task title"); return; }
@@ -793,28 +793,36 @@ function calSelectDay(dateStr, dayNum) {
     // Set the quick-add form's date
     const form = document.getElementById("cal-quick-add");
     if (form) {
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            const title = document.getElementById("cal-quick-title").value.trim();
-            const priority = document.querySelector('input[name="cal-priority"]:checked').value;
-            if (!title) return;
-            try {
-                const res = await fetch("/api/tasks", {
-                    method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ title, priority, due_date: dateStr })
-                });
-                if (!res.ok) throw new Error();
-                document.getElementById("cal-quick-title").value = "";
-                await refreshDashboard();
-                renderCalendar();
-                calSelectDay(dateStr, dayNum); // refresh panel
-                showToast("Task added to " + label + " ✓");
-            } catch { showToast("Failed to add task"); }
-        };
+        form._selectedDate = dateStr;
+        form._dayLabel = label;
+        form._dayNum = dayNum;
     }
 
     panel.classList.remove("hidden");
     panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+async function calQuickAdd() {
+    const form = document.getElementById("cal-quick-add");
+    const dateStr = form._selectedDate;
+    const label = form._dayLabel;
+    const dayNum = form._dayNum;
+    const title = document.getElementById("cal-quick-title").value.trim();
+    const priority = document.querySelector('input[name="calpriority"]:checked').value;
+    if (!title) return;
+    try {
+        const res = await fetch("/api/tasks", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, priority, due_date: dateStr })
+        });
+        if (!res.ok) throw new Error();
+        document.getElementById("cal-quick-title").value = "";
+        document.getElementById("cp-medium").checked = true;
+        await refreshDashboard();
+        renderCalendar();
+        calSelectDay(dateStr, dayNum);
+        showToast("Task added ✓");
+    } catch { showToast("Failed to add task"); }
 }
 
 function calPrevMonth() {

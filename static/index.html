@@ -326,17 +326,17 @@
                             </button>
                         </div>
                         <div id="cal-day-tasks"></div>
-                        <form id="cal-quick-add" class="cal-quick-add">
+                        <form id="cal-quick-add" class="cal-quick-add" onsubmit="return false;">
                             <input type="text" id="cal-quick-title" placeholder="Add task for this day..." autocomplete="off">
                             <div class="priority-group" style="margin-top:.5rem">
-                                <input type="radio" name="cal-priority" id="cp-low" value="low">
+                                <input type="radio" name="calpriority" id="cp-low" value="low">
                                 <label for="cp-low" class="p-chip low">Low</label>
-                                <input type="radio" name="cal-priority" id="cp-medium" value="medium" checked>
+                                <input type="radio" name="calpriority" id="cp-medium" value="medium" checked>
                                 <label for="cp-medium" class="p-chip medium">Med</label>
-                                <input type="radio" name="cal-priority" id="cp-high" value="high">
+                                <input type="radio" name="calpriority" id="cp-high" value="high">
                                 <label for="cp-high" class="p-chip high">High</label>
                             </div>
-                            <button type="submit" class="btn-primary" style="margin-top:.65rem">
+                            <button type="button" onclick="calQuickAdd()" class="btn-primary" style="margin-top:.65rem">
                                 <i class="fa-solid fa-plus"></i> Add Task
                             </button>
                         </form>
