@@ -24,7 +24,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup_event():
-    init_db()
+    pass  # init_db() is called at import time in database.py
 
 # ─── Pydantic Models ───────────────────────────────────────────────────────────
 

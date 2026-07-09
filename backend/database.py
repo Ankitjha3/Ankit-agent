@@ -135,6 +135,29 @@ class DailyBriefing(Base):
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    _migrate_db()
+
+def _migrate_db():
+    """Add new columns to existing tables without breaking existing data."""
+    import sqlalchemy as sa
+    try:
+        with engine.connect() as conn:
+            existing = [row[1] for row in conn.execute(sa.text("PRAGMA table_info(tasks)")).fetchall()]
+            migrations = {
+                "is_habit": "ALTER TABLE tasks ADD COLUMN is_habit BOOLEAN DEFAULT 0",
+                "habit_frequency": "ALTER TABLE tasks ADD COLUMN habit_frequency VARCHAR",
+                "goal_id": "ALTER TABLE tasks ADD COLUMN goal_id INTEGER",
+            }
+            for col, sql in migrations.items():
+                if col not in existing:
+                    conn.execute(sa.text(sql))
+                    print(f"Migration: added column {col} to tasks")
+            conn.commit()
+    except Exception as e:
+        print(f"Migration warning (non-fatal): {e}")
+
+# Run migration immediately on import so it's done before any request
+init_db()
 
 
 def get_db():
