@@ -189,7 +189,12 @@ async function handleAddTask(e) {
             })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || "Error " + res.status);
+        if (!res.ok) {
+            const msg = typeof data.detail === "string" ? data.detail :
+                        Array.isArray(data.detail) ? data.detail.map(e => e.msg).join(", ") :
+                        "Error " + res.status;
+            throw new Error(msg);
+        }
         titleEl.value = ""; descEl.value = ""; dueEl.value = "";
         document.getElementById("p-medium").checked = true;
         await refreshDashboard();

@@ -510,4 +510,8 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.get("/")
 def read_index():
-    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+    from fastapi.responses import Response
+    with open(os.path.join(STATIC_DIR, "index.html"), "rb") as f:
+        content = f.read()
+    return Response(content=content, media_type="text/html",
+                    headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
