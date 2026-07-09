@@ -28,27 +28,29 @@ def startup_event():
 
 # ─── Pydantic Models ───────────────────────────────────────────────────────────
 
+from typing import Optional
+
 class TaskCreate(BaseModel):
     title: str
-    description: str = None
+    description: Optional[str] = None
     priority: str = "medium"
-    due_date: str = None
+    due_date: Optional[str] = None
     is_habit: bool = False
-    habit_frequency: str = None
-    goal_id: int = None
+    habit_frequency: Optional[str] = None
+    goal_id: Optional[int] = None
 
 class ChatMessage(BaseModel):
     message: str
 
 class GoalCreate(BaseModel):
     title: str
-    description: str = None
+    description: Optional[str] = None
     timeframe: str = "weekly"
-    deadline: str = None
+    deadline: Optional[str] = None
 
 class HabitCreate(BaseModel):
     title: str
-    description: str = None
+    description: Optional[str] = None
     frequency: str = "daily"
 
 class HabitCheck(BaseModel):
