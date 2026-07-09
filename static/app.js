@@ -87,11 +87,15 @@ function setOnline(online) {
 async function fetchTasks() {
     try {
         const res = await fetch("/api/tasks");
-        if (!res.ok) throw new Error();
+        if (!res.ok) throw new Error("Server error " + res.status);
         allTasks = await res.json();
         renderTasks();
         updateMiniStats();
-    } catch (e) { console.error("fetchTasks:", e); }
+    } catch (e) {
+        console.error("fetchTasks:", e);
+        const container = document.getElementById("tasks-list");
+        if (container) container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><p>Failed to load tasks. Try refreshing.</p></div>`;
+    }
 }
 
 function updateMiniStats() {
@@ -255,10 +259,12 @@ async function fetchBriefing() {
 async function fetchGoals() {
     try {
         const res = await fetch("/api/goals");
-        if (!res.ok) throw new Error();
-        const goals = await res.json();
-        renderGoals(goals);
-    } catch { document.getElementById("goals-list").innerHTML = `<div class="empty-state"><i class="fa-solid fa-bullseye"></i><p>Failed to load goals.</p></div>`; }
+        if (!res.ok) throw new Error("Server error " + res.status);
+        renderGoals(await res.json());
+    } catch (e) {
+        console.error("fetchGoals:", e);
+        document.getElementById("goals-list").innerHTML = `<div class="empty-state"><i class="fa-solid fa-bullseye"></i><p>Failed to load goals. Try refreshing.</p></div>`;
+    }
 }
 
 function renderGoals(goals) {
@@ -334,9 +340,12 @@ async function handleDeleteGoal(id) {
 async function fetchHabits() {
     try {
         const res = await fetch("/api/habits");
-        if (!res.ok) throw new Error();
+        if (!res.ok) throw new Error("Server error " + res.status);
         renderHabits(await res.json());
-    } catch { document.getElementById("habits-list").innerHTML = `<div class="empty-state"><i class="fa-solid fa-fire"></i><p>Failed to load habits.</p></div>`; }
+    } catch (e) {
+        console.error("fetchHabits:", e);
+        document.getElementById("habits-list").innerHTML = `<div class="empty-state"><i class="fa-solid fa-fire"></i><p>Failed to load habits. Try refreshing.</p></div>`;
+    }
 }
 
 function renderHabits(habits) {
