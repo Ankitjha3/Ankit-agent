@@ -44,12 +44,13 @@ function showView(name) {
         if (el) el.classList.add("active");
     });
 
-    const titles = { tasks: "My Tasks", goals: "Goals", habits: "Habits", progress: "Progress", chat: "AI Chat" };
+    const titles = { tasks: "My Tasks", goals: "Goals", habits: "Habits", progress: "Progress", chat: "AI Chat", calendar: "Calendar" };
     document.getElementById("topbar-title").textContent = titles[name] || name;
 
     if (name === "progress") renderProgress();
     if (name === "goals") fetchGoals();
     if (name === "habits") fetchHabits();
+    if (name === "calendar") { renderCalendar(); }
     closeSidebar();
 }
 
@@ -496,11 +497,6 @@ function renderActivityChart(days) {
     }).join("");
 }
 
-// ── DASHBOARD ──
-async function refreshDashboard() {
-    await Promise.all([fetchTasks(), fetchSuggestion(), fetchProgress()]);
-}
-
 function setEl(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 function setStyle(id, prop, val) { const el = document.getElementById(id); if (el) el.style[prop] = val; }
 
@@ -678,4 +674,174 @@ function escapeHTML(str) {
     return String(str)
         .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+// ── CALENDAR ──
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth(); // 0-indexed
+let calSelectedDate = null;
+
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+function renderCalendar() {
+    const title = document.getElementById("cal-month-title");
+    if (title) title.textContent = `${MONTH_NAMES[calMonth]} ${calYear}`;
+
+    const grid = document.getElementById("cal-grid");
+    if (!grid) return;
+
+    const today = new Date();
+    const firstDay = new Date(calYear, calMonth, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+
+    // Map tasks by due date
+    const tasksByDate = {};
+    allTasks.forEach(t => {
+        if (t.due_date) {
+            if (!tasksByDate[t.due_date]) tasksByDate[t.due_date] = [];
+            tasksByDate[t.due_date].push(t);
+        }
+    });
+
+    // Build day names header
+    const dayNamesHTML = DAY_NAMES.map(d => `<div class="cal-day-name">${d}</div>`).join("");
+
+    // Build calendar weeks
+    let weeksHTML = '<div class="cal-week">';
+    let dayCount = 0;
+
+    // Previous month padding
+    for (let i = firstDay - 1; i >= 0; i--) {
+        const d = daysInPrev - i;
+        weeksHTML += `<div class="cal-day empty other-month"><div class="cal-day-num">${d}</div></div>`;
+        dayCount++;
+    }
+
+    // Current month days
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        const isToday = d === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
+        const isSelected = dateStr === calSelectedDate;
+        const dayTasks = tasksByDate[dateStr] || [];
+        const hasTasks = dayTasks.length > 0;
+
+        const pillsHTML = dayTasks.slice(0, 3).map(t =>
+            `<div class="cal-task-pill ${t.completed ? "done" : t.priority}">${escapeHTML(t.title)}</div>`
+        ).join("");
+        const moreHTML = dayTasks.length > 3 ? `<div class="cal-more-badge">+${dayTasks.length - 3} more</div>` : "";
+
+        weeksHTML += `<div class="cal-day${isToday ? " today" : ""}${isSelected ? " selected" : ""}${hasTasks ? " has-tasks" : ""}" 
+            onclick="calSelectDay('${dateStr}', ${d})">
+            <div class="cal-day-num">${d}</div>
+            <div class="cal-task-dots">${pillsHTML}${moreHTML}</div>
+        </div>`;
+
+        dayCount++;
+        if (dayCount % 7 === 0 && d < daysInMonth) {
+            weeksHTML += '</div><div class="cal-week">';
+        }
+    }
+
+    // Next month padding
+    const remaining = 7 - (dayCount % 7);
+    if (remaining < 7) {
+        for (let d = 1; d <= remaining; d++) {
+            weeksHTML += `<div class="cal-day empty other-month"><div class="cal-day-num">${d}</div></div>`;
+        }
+    }
+    weeksHTML += "</div>";
+
+    grid.innerHTML = `
+        <div class="cal-day-names">${dayNamesHTML}</div>
+        <div class="cal-weeks">${weeksHTML}</div>`;
+}
+
+function calSelectDay(dateStr, dayNum) {
+    calSelectedDate = dateStr;
+    renderCalendar(); // re-render to show selected
+
+    const panel = document.getElementById("cal-day-panel");
+    const titleEl = document.getElementById("cal-selected-date-title");
+    const tasksEl = document.getElementById("cal-day-tasks");
+
+    const dateObj = new Date(dateStr + "T00:00:00");
+    const label = dateObj.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+    if (titleEl) titleEl.textContent = label;
+
+    const dayTasks = allTasks.filter(t => t.due_date === dateStr);
+
+    if (tasksEl) {
+        if (!dayTasks.length) {
+            tasksEl.innerHTML = `<p style="font-size:.82rem;color:var(--text2);margin-bottom:.5rem">No tasks scheduled for this day.</p>`;
+        } else {
+            tasksEl.innerHTML = dayTasks.map(t => `
+                <div class="cal-day-task-item ${t.priority}${t.completed ? " done" : ""}">
+                    <label class="task-checkbox-wrapper" style="width:18px;height:18px;flex-shrink:0">
+                        <input type="checkbox" ${t.completed ? "checked disabled" : ""} onclick="handleCompleteTask(${t.id})">
+                        <span class="checkmark"></span>
+                    </label>
+                    <span class="cal-day-task-title">${escapeHTML(t.title)}</span>
+                    <button class="task-delete-btn" style="opacity:1" onclick="handleDeleteTask(${t.id})">
+                        <i class="fa-regular fa-trash-can"></i>
+                    </button>
+                </div>`).join("");
+        }
+    }
+
+    // Set the quick-add form's date
+    const form = document.getElementById("cal-quick-add");
+    if (form) {
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const title = document.getElementById("cal-quick-title").value.trim();
+            const priority = document.querySelector('input[name="cal-priority"]:checked').value;
+            if (!title) return;
+            try {
+                const res = await fetch("/api/tasks", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title, priority, due_date: dateStr })
+                });
+                if (!res.ok) throw new Error();
+                document.getElementById("cal-quick-title").value = "";
+                await refreshDashboard();
+                renderCalendar();
+                calSelectDay(dateStr, dayNum); // refresh panel
+                showToast("Task added to " + label + " ✓");
+            } catch { showToast("Failed to add task"); }
+        };
+    }
+
+    panel.classList.remove("hidden");
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function calPrevMonth() {
+    calMonth--;
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    calSelectedDate = null;
+    document.getElementById("cal-day-panel").classList.add("hidden");
+    renderCalendar();
+}
+
+function calNextMonth() {
+    calMonth++;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    calSelectedDate = null;
+    document.getElementById("cal-day-panel").classList.add("hidden");
+    renderCalendar();
+}
+
+function calGoToday() {
+    calYear = new Date().getFullYear();
+    calMonth = new Date().getMonth();
+    calSelectedDate = null;
+    document.getElementById("cal-day-panel").classList.add("hidden");
+    renderCalendar();
+}
+
+// ── DASHBOARD ──
+async function refreshDashboard() {
+    await Promise.all([fetchTasks(), fetchSuggestion(), fetchProgress()]);
 }

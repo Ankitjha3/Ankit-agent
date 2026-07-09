@@ -40,6 +40,9 @@
             <button class="nav-item active" id="nav-tasks" onclick="showView('tasks')">
                 <i class="fa-solid fa-list-check"></i><span>Tasks</span>
             </button>
+            <button class="nav-item" id="nav-calendar" onclick="showView('calendar')">
+                <i class="fa-solid fa-calendar-days"></i><span>Calendar</span>
+            </button>
             <button class="nav-item" id="nav-goals" onclick="showView('goals')">
                 <i class="fa-solid fa-bullseye"></i><span>Goals</span>
             </button>
@@ -300,8 +303,48 @@
                 </div>
             </div>
 
-            <!-- ── CHAT VIEW ── -->
-            <div class="view" id="view-chat">
+            <!-- ── CALENDAR VIEW ── -->
+            <div class="view" id="view-calendar">
+                <div class="view-inner">
+                    <div class="cal-header-row">
+                        <button class="cal-nav-btn" onclick="calPrevMonth()"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="cal-month-title" id="cal-month-title">July 2026</h2>
+                        <button class="cal-nav-btn" onclick="calNextMonth()"><i class="fa-solid fa-chevron-right"></i></button>
+                        <button class="cal-today-btn" onclick="calGoToday()">Today</button>
+                    </div>
+
+                    <div class="cal-grid" id="cal-grid">
+                        <!-- Injected by JS -->
+                    </div>
+
+                    <!-- Task detail panel for clicked date -->
+                    <div class="cal-day-panel hidden" id="cal-day-panel">
+                        <div class="cal-day-panel-header">
+                            <span id="cal-selected-date-title">Tasks for date</span>
+                            <button class="cal-panel-close" onclick="document.getElementById('cal-day-panel').classList.add('hidden')">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <div id="cal-day-tasks"></div>
+                        <form id="cal-quick-add" class="cal-quick-add">
+                            <input type="text" id="cal-quick-title" placeholder="Add task for this day..." autocomplete="off">
+                            <div class="priority-group" style="margin-top:.5rem">
+                                <input type="radio" name="cal-priority" id="cp-low" value="low">
+                                <label for="cp-low" class="p-chip low">Low</label>
+                                <input type="radio" name="cal-priority" id="cp-medium" value="medium" checked>
+                                <label for="cp-medium" class="p-chip medium">Med</label>
+                                <input type="radio" name="cal-priority" id="cp-high" value="high">
+                                <label for="cp-high" class="p-chip high">High</label>
+                            </div>
+                            <button type="submit" class="btn-primary" style="margin-top:.65rem">
+                                <i class="fa-solid fa-plus"></i> Add Task
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── CHAT VIEW ── -->            <div class="view" id="view-chat">
                 <div class="chat-panel">
                     <div class="chat-header">
                         <div class="agent-profile">
@@ -343,6 +386,7 @@
 <!-- Mobile Nav -->
 <nav class="mobile-nav">
     <button class="mobile-nav-item active" id="mnav-tasks" onclick="showView('tasks')"><i class="fa-solid fa-list-check"></i><span>Tasks</span></button>
+    <button class="mobile-nav-item" id="mnav-calendar" onclick="showView('calendar')"><i class="fa-solid fa-calendar-days"></i><span>Calendar</span></button>
     <button class="mobile-nav-item" id="mnav-goals" onclick="showView('goals')"><i class="fa-solid fa-bullseye"></i><span>Goals</span></button>
     <button class="mobile-nav-item" id="mnav-habits" onclick="showView('habits')"><i class="fa-solid fa-fire"></i><span>Habits</span></button>
     <button class="mobile-nav-item" id="mnav-progress" onclick="showView('progress')"><i class="fa-solid fa-chart-line"></i><span>Progress</span></button>
